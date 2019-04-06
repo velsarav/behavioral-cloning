@@ -14,7 +14,7 @@ from keras.utils import plot_model
 from keras.optimizers import Adam
 
 from keras.models import Model
-from keras.layers import Cropping2D,  Conv2D, Convolution2D, MaxPool2D, Lambda, Flatten, Dense, Dropout, concatenate, ELU, BatchNormalization
+from keras.layers import Cropping2D,  Conv2D, Convolution2D, MaxPool2D, Lambda, Flatten, Dense, Dropout, concatenate, ELU, BatchNormalization, ZeroPadding2D
 from keras.applications.vgg16 import VGG16
 # %matplotlib inline
 import matplotlib.pyplot as plt
@@ -156,109 +156,40 @@ def generator(lines_path, img_path, batch_size = 32):
 train_generator = generator(train_data, img_path)
 validate_generator = generator(validation_data, img_path)
 
-model = Sequential()
-model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160, 320, 3)))
-model.add(Cropping2D(cropping=((70, 25), (0, 0))))
-model.add(Convolution2D(24, 5, 5, subsample=(2, 2), activation='relu'))
-# model.add(MaxPooling2D())
-model.add(Convolution2D(36, 5, 5, subsample=(2, 2), activation='relu'))
-# model.add(MaxPooling2D())
-model.add(Convolution2D(48, 5, 5, subsample=(2, 2), activation='relu'))
-model.add(Convolution2D(64, 3, 3, activation='relu'))
-model.add(Convolution2D(64, 3, 3, activation='relu'))
-model.add(Dropout(0.8))
-model.add(Flatten())
-model.add(Dense(100))
-model.add(Dense(50))
-model.add(Dense(10))
-model.add(Dense(1))
+def get_cnn_model():   
+    model = Sequential()
+    model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160, 320, 3)))
+    model.add(Cropping2D(cropping=((70, 25), (0, 0))))
+    
+    model.add(Convolution2D(24, 5, 5, subsample=(2, 2), activation='relu'))
+    # model.add(MaxPooling2D())
+    model.add(Convolution2D(36, 5, 5, subsample=(2, 2), activation='relu'))
+    # model.add(MaxPooling2D())
+    model.add(Convolution2D(48, 5, 5, subsample=(2, 2), activation='relu'))
+    model.add(Convolution2D(64, 3, 3, activation='relu'))
+    model.add(Convolution2D(64, 3, 3, activation='relu'))
+    model.add(Dropout(0.8))
+    model.add(Flatten())
+    model.add(Dense(100))
+    model.add(Dense(50))
+    model.add(Dense(10))
+    model.add(Dense(1))
+    return model
+   
+model = get_cnn_model()
+model.compile(optimizer=Adam(lr = 1e-5), loss='mse', metrics=['accuracy'])
 
-model.compile(optimizer='adam', loss='mse')
+plot_model(model, '{}.png'.format("cnn"), show_shapes=True)
+print(model.summary())
 
-file = 'model_new.h5'
+file = 'model.h5'
 earlystopper = EarlyStopping(patience=5, verbose = 1)
 checkpointer = ModelCheckpoint(file, monitor='val_loss', verbose = 1, save_best_only=True)
-model.fit_generator(train_generator, steps_per_epoch= len(train_data), validation_data = validate_generator,
+history_object = model.fit_generator(train_generator, steps_per_epoch= len(train_data), validation_data = validate_generator,
                         validation_steps=len(validation_data), epochs = 1)
 model.save(file)
 
-# def get_cnn_model():
-#     model = Sequential()
-#     model.add(Cropping2D(cropping = ((75,25),(0,0)),
-#                         input_shape= (160,320,3),
-#                         data_format = "channels_last"))
-    
-#     model.add(Lambda(lambda x: (x/127.5) - 0.5))
-
-#     model.add(Conv2D(3, (1, 1), padding='same'))
-#     model.add(ELU())
-
-#     model.add(BatchNormalization())
-#     model.add(Conv2D(16, (5, 5), strides= (2, 2), padding="same"))
-#     model.add(ELU())
-
-#     model.add(BatchNormalization())
-#     model.add(Conv2D(32, (5, 5), strides= (2, 2), padding="same"))
-#     model.add(ELU())
-
-#     model.add(BatchNormalization())
-#     model.add(Conv2D(64, (5, 5), strides= (2, 2), padding="same"))
-#     model.add(ELU())
-
-#     model.add(BatchNormalization())
-#     model.add(Conv2D(128, (5, 5), strides= (2, 2), padding="same"))
-#     model.add(ELU())
-
-#     model.add(Flatten())
-#     model.add(ELU())
-
-#     model.add(Dense(512))
-#     model.add(Dropout(.2))
-#     model.add(ELU())
-
-#     model.add(Dense(100))
-#     model.add(Dropout(.5))
-#     model.add(ELU())
-
-#     model.add(Dense(10))
-#     model.add(Dropout(.5))
-#     model.add(ELU())
-
-#     model.add(Dense(11))
-
-#     return model
+print(history_object.history.keys())
 
 
-# model = get_cnn_model()
-# # model.compile(optimizer='adam', loss='mse')
-# model.compile(optimizer=Adam(lr = 1e-5), loss='mse', metrics=['accuracy'])
 
-# plot_model(model, '{}.png'.format("cnn"), show_shapes=True)
-# print(model.summary())
-
-# file = 'model_gen.h5'
-# callbacks = [
-#         # Save best model
-#         ModelCheckpoint(file, monitor='val_loss', verbose = 1, save_best_only=True),
-#         # Stop training after 5 epochs without improvement
-#         EarlyStopping(patience=5, verbose=1)
-#     ]
-
-# history_object = model.fit_generator(
-#         train_generator,
-#         steps_per_epoch=len(train_data),
-#         epochs=1,
-#         validation_data=validate_generator,
-#         validation_steps=len(validation_data)
-#     )
-
-# print(history_object.history.keys())
-
-# ### plot the training and validation loss for each epoch
-# plt.plot(history_object.history['loss'])
-# plt.plot(history_object.history['val_loss'])
-# plt.title('model mean squared error loss')
-# plt.ylabel('mean squared error loss')
-# plt.xlabel('epoch')
-# plt.legend(['training set', 'validation set'], loc='upper right')
-# plt.show()
