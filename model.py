@@ -162,9 +162,7 @@ def get_cnn_model():
     model.add(Cropping2D(cropping=((70, 25), (0, 0))))
     
     model.add(Convolution2D(24, 5, 5, subsample=(2, 2), activation='relu'))
-    # model.add(MaxPooling2D())
     model.add(Convolution2D(36, 5, 5, subsample=(2, 2), activation='relu'))
-    # model.add(MaxPooling2D())
     model.add(Convolution2D(48, 5, 5, subsample=(2, 2), activation='relu'))
     model.add(Convolution2D(64, 3, 3, activation='relu'))
     model.add(Convolution2D(64, 3, 3, activation='relu'))
@@ -189,7 +187,18 @@ history_object = model.fit_generator(train_generator, steps_per_epoch= len(train
                         validation_steps=len(validation_data), epochs = 1)
 model.save(file)
 
-print(history_object.history.keys())
+# For plotting only
+# history_object = model.fit_generator(train_generator, steps_per_epoch= len(train_data), validation_data = validate_generator,
+#                         validation_steps=len(validation_data), epochs = 3)
+# print(history_object.history.keys())
+# ### plot the training and validation loss for each epoch
+# plt.plot(history_object.history['loss'])
+# plt.plot(history_object.history['val_loss'])
+# plt.title('model mean squared error loss')
+# plt.ylabel('mean squared error loss')
+# plt.xlabel('epoch')
+# plt.legend(['training set', 'validation set'], loc='upper right')
+# plt.savefig("./output/validation_loss.png")
 
 
 
