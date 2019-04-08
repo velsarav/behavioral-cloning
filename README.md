@@ -41,6 +41,8 @@ The vehicle has 3 cameras to record the images - left, center, and right.
 
 This resulted in Total Train samples: 10242 and Total valid samples: 2562
 
+ADD:  Why you collected as much data as possible .....
+
 The following are the center, right, and left images recorded at the same location:
 
 ![alt text][image1]
@@ -61,7 +63,11 @@ The model used an adam optimizer, so the learning rate was not tuned manually
 
 ### Training Strategy
 
+ADD:  Made several experiments in each of them......
+
 #### Data Collection and classification
+
+https://pythonspot.com/matplotlib-histogram/
 
 `read_data_csv` function read csv file from the simulated data and load line by line.
 
@@ -80,13 +86,34 @@ Split the data for train and validation to solve the regression problem.
 `adjust_steering` function appends the new angle to the corresponding images.
 
 ### Final Model Architecture
+ADD:  http://alexlenail.me/NN-SVG/LeNet.html and https://machinelearningmastery.com/visualize-deep-learning-neural-network-model-keras/
 
-* Crop unneeded part of the image
-* Resize image to a small one
-* Normalize the data
-* Use 5 convolutional layers
-* 1 dropout layer
-* 3 fully connected layer
+The (keras.model.Sequential)[http://faroit.com/keras-docs/2.0.9/models/sequential/] class is wrapper for the neural network model. It provides common function like `compile()`, `fit()` and `evaluate()`.
+
+A Keras layer is just like a neural network layer. There are fully connected layers, max pool layers, and activation layers. We can add a layer to the model using the model's add() function. Keras will automatically infer the shape of all layers after the first layer. We need to set the input dimensions for the first layer. 
+
+* `keras.layers.Lambda` Wraps arbitrary expression as a Layer object. Inside lambda we normalise each pixel from -0.5 to +0.5. Since this first layer in the model we need to provide the `input_shape` argument.
+
+After adding the layer the vehicle can drive little bit on the path.
+
+* `keras.layers.Cropping2D` Crops along the spatial dimensions i.e height and width
+
+* A ConvNet is made up of Layers. Every Layer has a simple API: It transforms an input volume to an output volume with some differentiable function that may or may not have parameters. 
+    * `keras.layers.Convolution2D` Convolution operator for filtering windows of two-dimensional inputs (spatial convolution over images). 
+    * Consists of number of convolution filters to use
+    * number of rows in the convolution kernel
+    * number of columns in the convolution kernel. 
+    * Subsample consists tuple of length 2. Factor by which to subsample output. Also called strides. 
+    * RELU layer will apply an elementwise activation function, such as the max(0,x) thresholding at zero. This leaves the size of the volume unchanged
+    Please refer to [Convolutional Neural Networks for Visual Recognition](http://cs231n.github.io/convolutional-networks/)
+
+* The term “dropout” refers to dropping out units (both hidden and visible) in a neural network. By "dropping" means these units are not considered during a particular forward or backward pass. 
+    * Dropout is an approach to regularization in neural networks which helps reducing interdependent learning amongst the neurons. 
+    * `keras.layers.Dropout` consists in randomly setting a fraction rate of input units to 0 at each update during training time, which helps prevent overfitting.
+    * Dropout roughly doubles the number of iterations required to converge. However, training time for each epoch is less.
+
+* `keras.layers.Flatten` Flattens the input. Does not affect the batch size.
+* 4 `keras.layers.Dense` densely-connected NN layer
 * Optimizer Adam with learning rate 1e-5 instead of default 1e-3.
 
 The final model architecture consisted of a convolution neural network with the following layers and layer sizes
