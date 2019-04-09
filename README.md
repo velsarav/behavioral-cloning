@@ -39,9 +39,9 @@ Using the Udacity provided simulator collected the image data and corresponding 
 
 The vehicle has 3 cameras to record the images - left, center, and right.
 
-This resulted in Total Train samples: 10242 and Total valid samples: 2562
+This resulted in Total Train samples: 19284 and Total valid samples: 4824
 
-ADD:  Why you collected as much data as possible .....
+Machine learning involves trying out ideas and testing them to see if they work. If the model is over or underfitting, then try to figure out why and adjust accordingly. Hope the training samples of 19284 is good amount of data to avoid overfitting or underfitting when training the model.
 
 The following are the center, right, and left images recorded at the same location:
 
@@ -63,11 +63,22 @@ The model used an adam optimizer, so the learning rate was not tuned manually
 
 ### Training Strategy
 
-ADD:  Made several experiments in each of them......
+Model consists of a convolution neural network with 5x5 filter sizes and depths between 24 and 64 (model.py `get_cnn_model`).
+
+A Keras layer is just like a neural network layer. There are fully connected layers, max pool layers, and activation layers. We can add a layer to the model using the model's add() function. Keras will automatically infer the shape of all layers after the first layer. We need to set the input dimensions for the first layer. 
+
+The [keras.model.Sequential](http://faroit.com/keras-docs/2.0.9/models/sequential/) class is wrapper for the neural network model. It provides common function like `compile()`, `fit()` and `evaluate()`.
+
+`keras.layers.Lambda` Wraps arbitrary expression as a Layer object. Inside lambda we normalise each pixel from -0.5 to +0.5. Since this first layer in the model we need to provide the `input_shape` argument.
+
+RELU layer will apply an elementwise activation function, such as the max(0,x) thresholding at zero. This leaves the size of the volume unchanged
+Please refer to [Convolutional Neural Networks for Visual Recognition](http://cs231n.github.io/convolutional-networks/)
+
+After adding the layer the vehicle can drive little bit on the path.
+
+Following steps help to train the car further and run it on track.
 
 #### Data Collection and classification
-
-https://pythonspot.com/matplotlib-histogram/
 
 `read_data_csv` function read csv file from the simulated data and load line by line.
 
@@ -86,15 +97,40 @@ Split the data for train and validation to solve the regression problem.
 `adjust_steering` function appends the new angle to the corresponding images.
 
 ### Final Model Architecture
-ADD:  http://alexlenail.me/NN-SVG/LeNet.html and https://machinelearningmastery.com/visualize-deep-learning-neural-network-model-keras/
 
-The (keras.model.Sequential)[http://faroit.com/keras-docs/2.0.9/models/sequential/] class is wrapper for the neural network model. It provides common function like `compile()`, `fit()` and `evaluate()`.
-
-A Keras layer is just like a neural network layer. There are fully connected layers, max pool layers, and activation layers. We can add a layer to the model using the model's add() function. Keras will automatically infer the shape of all layers after the first layer. We need to set the input dimensions for the first layer. 
-
-* `keras.layers.Lambda` Wraps arbitrary expression as a Layer object. Inside lambda we normalise each pixel from -0.5 to +0.5. Since this first layer in the model we need to provide the `input_shape` argument.
-
-After adding the layer the vehicle can drive little bit on the path.
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+lambda_1 (Lambda)            (None, 160, 320, 3)       0         
+_________________________________________________________________
+cropping2d_1 (Cropping2D)    (None, 65, 320, 3)        0         
+_________________________________________________________________
+conv2d_1 (Conv2D)            (None, 31, 158, 24)       1824      
+_________________________________________________________________
+conv2d_2 (Conv2D)            (None, 14, 77, 36)        21636     
+_________________________________________________________________
+conv2d_3 (Conv2D)            (None, 5, 37, 48)         43248     
+_________________________________________________________________
+conv2d_4 (Conv2D)            (None, 3, 35, 64)         27712     
+_________________________________________________________________
+conv2d_5 (Conv2D)            (None, 1, 33, 64)         36928     
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 1, 33, 64)         0         
+_________________________________________________________________
+flatten_1 (Flatten)          (None, 2112)              0         
+_________________________________________________________________
+dense_1 (Dense)              (None, 100)               211300    
+_________________________________________________________________
+dense_2 (Dense)              (None, 50)                5050      
+_________________________________________________________________
+dense_3 (Dense)              (None, 10)                510       
+_________________________________________________________________
+dense_4 (Dense)              (None, 1)                 11        
+=================================================================
+Total params: 348,219
+Trainable params: 348,219
+Non-trainable params: 0
+_________________________________________________________________
 
 * `keras.layers.Cropping2D` Crops along the spatial dimensions i.e height and width
 
@@ -104,25 +140,31 @@ After adding the layer the vehicle can drive little bit on the path.
     * number of rows in the convolution kernel
     * number of columns in the convolution kernel. 
     * Subsample consists tuple of length 2. Factor by which to subsample output. Also called strides. 
-    * RELU layer will apply an elementwise activation function, such as the max(0,x) thresholding at zero. This leaves the size of the volume unchanged
-    Please refer to [Convolutional Neural Networks for Visual Recognition](http://cs231n.github.io/convolutional-networks/)
 
 * The term “dropout” refers to dropping out units (both hidden and visible) in a neural network. By "dropping" means these units are not considered during a particular forward or backward pass. 
+    * At each training stage, individual nodes are either dropped out of the net with probability 1-p or kept with probability p, so that a reduced network is left; incoming and outgoing edges to a dropped-out node are also removed.
+    * A fully connected layer occupies most of the parameters, and hence, neurons develop co-dependency amongst each other during training which curbs the individual power of each neuron leading to over-fitting of training data.
     * Dropout is an approach to regularization in neural networks which helps reducing interdependent learning amongst the neurons. 
+    * Training Phase: For each hidden layer, for each training sample, for each iteration, ignore (zero out) a random fraction, p, of nodes (and corresponding activations).
+    * Testing phase: Use all activations, but reduce them by a factor p (to account for the missing activations during training).
     * `keras.layers.Dropout` consists in randomly setting a fraction rate of input units to 0 at each update during training time, which helps prevent overfitting.
     * Dropout roughly doubles the number of iterations required to converge. However, training time for each epoch is less.
 
 * `keras.layers.Flatten` Flattens the input. Does not affect the batch size.
-* 4 `keras.layers.Dense` densely-connected NN layer
+* `keras.layers.Dense` densely-connected NN layer, units is the Positive integer, dimensionality of the output space.
 * Optimizer Adam with learning rate 1e-5 instead of default 1e-3.
 
 The final model architecture consisted of a convolution neural network with the following layers and layer sizes
 
  ![alt text][image4]
 
- The Total parameter is 348,219
+The Total parameter is 348,219
 
- Train the model using `model.fit_generator()` with epochs=1 
+`keras.callbacks.EarlyStopping` Stop training when a monitored quantity has stopped improving.
+
+`keras.callbacks.ModelCheckpoint` Save the model after every epoch. For example: if `filepath` is `weights.{epoch:02d}-{val_loss:.2f}.hdf5`, then the model checkpoints will be saved with the epoch number and the validation loss in the filename.
+
+`model.fit_generator()`  will trains the model on data generated batch-by-batch by a Python generator. The generator is run in parallel to the model, for efficiency. For instance, this allows you to do real-time data augmentation on images on CPU in parallel to training your model on GPU.
 
 ### Model History Object
 When calling `model.fit_generator()`, Keras outputs a history object that contains the training and validation loss for each epoch. to understand it better used the epochs=3 and plotted the same
